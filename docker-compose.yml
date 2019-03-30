@@ -1,0 +1,30 @@
+version: '3.5'
+
+services:
+  service-one:
+    build:
+      context: ./test-services/service/
+      dockerfile: Dockerfile
+    ports:
+      - '8081:8081'
+    environment:
+      - NAME=service-one
+      - PORT=8081
+  service-two:
+    build:
+      context: ./test-services/service/
+      dockerfile: Dockerfile
+    ports:
+      - '8082:8082'
+    environment:
+      - NAME=service-two
+      - PORT=8082
+  service-three:
+    build:
+      context: ./test-services/service/
+      dockerfile: Dockerfile
+    ports:
+      - '8083:8083'
+    environment:
+      - NAME=service-three
+      - PORT=8083
