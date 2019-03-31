@@ -2,7 +2,7 @@ const express = require('express');
 const httpProxy = require('express-http-proxy');
 const bodyParser = require('body-parser');
 const morgan = require("morgan");
-const axios = require('axios');
+const request = require("request");
 
 const app = express();
 
@@ -15,7 +15,7 @@ const services = [
     {
         "name": "service-one",
         "url": "http://localhost",
-        "port": "8081"
+        "port": "8081",
     },
     {
         "name": "service-two",
@@ -38,29 +38,18 @@ const getServiceProxy = (serviceName) => {
     }
 };
 
-app.post('/service', (req, res, next) => {
+app.post('/service', (req, res) => {
     addService(req.body);
     res.sendStatus(201);
 });
 
-app.get('/services', (req, res, next) => {
+app.get('/services', (req, res) => {
     res.status(200);
     res.json(services.map(service => service["name"]));
 });
 
-var request = require("request");
-
-function initialize() {
-    // Setting URL and headers for request
-    var options = {
-        url: 'https://api.github.com/users/narenaryan',
-        headers: {
-            'User-Agent': 'request'
-        }
-    };
-    // Return new promise
+function getRequest(options) {
     return new Promise(function(resolve, reject) {
-        // Do async job
         request.get(options, function(err, resp, body) {
             if (err) {
                 reject(err);
@@ -69,13 +58,18 @@ function initialize() {
             }
         })
     })
-
 }
 
 app.get('/test-call', (req, res) => {
-    var initializePromise = initialize();
+    const options = {
+        url: 'http://localhost:8080/service-two/people',
+        headers: {
+            'User-Agent': 'request',
+            'content-type': 'application/json'
+        }
+    };
 
-    initializePromise.then(function(result) {
+    getRequest(options).then(function(result) {
         const userDetails = result;
         res.status(200);
         res.json(userDetails);

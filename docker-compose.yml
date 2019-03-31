@@ -28,3 +28,7 @@ services:
     environment:
       - NAME=service-three
       - PORT=8083
+  mongo:
+    image: mongo
+    ports:
+    - '27017:27017'
