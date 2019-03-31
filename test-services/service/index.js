@@ -1,16 +1,16 @@
 // Environment variables that should be set
 //    NAME, PORT
-
-
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const morgan = require("morgan");
 
 const app = express();
+app.use(morgan('dev'));
 
 const serviceName = process.env.NAME || "unnamed";
 
-app.set('port', (process.env.PORT || 8080));
+app.set('port', (process.env.PORT || 8081));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors());
@@ -23,7 +23,11 @@ app.use((req, res, next) => {
     next();
 });
 
-app.get('/health', (req, res) => {
+function addBaseEndpoint(endpoint) {
+    return '/' + serviceName + endpoint;
+}
+
+app.get(addBaseEndpoint('/health'), (req, res) => {
     res.setHeader('Cache-Control', 'no-cache');
     res.sendStatus(200)
 });
@@ -34,13 +38,13 @@ const people = [
     "George"
 ];
 
-app.get('/people', (req, res) => {
+app.get(addBaseEndpoint('/people'), (req, res) => {
     res.setHeader('Cache-Control', 'no-cache');
     res.status(200);
     res.json(people);
 });
 
-app.post('/person', (req, res) => {
+app.post(addBaseEndpoint('/person'), (req, res) => {
     const person = req.body.name;
 
     people.push(person);
