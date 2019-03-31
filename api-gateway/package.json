@@ -8,7 +8,6 @@
     "express": "^4.16.4",
     "express-http-proxy": "^1.5.1",
     "http": "0.0.0",
-    "morgan": "^1.9.1",
-    "request": "^2.88.0"
+    "morgan": "^1.9.1"
   }
 }

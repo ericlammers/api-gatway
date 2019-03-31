@@ -2,7 +2,8 @@ const express = require('express');
 const httpProxy = require('express-http-proxy');
 const bodyParser = require('body-parser');
 const morgan = require("morgan");
-const request = require("request");
+const axios = require("axios");
+const registerUrl = 'http://localhost:8090';
 
 const app = express();
 
@@ -11,24 +12,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.set('port', (process.env.PORT || 8080));
 
-const services = [
-    {
-        "name": "service-one",
-        "url": "http://localhost",
-        "port": "8081",
-    },
-    {
-        "name": "service-two",
-        "url": "http://localhost",
-        "port": "8082"
-    }
-];
-
-const addService = (service) => {
-    services.push(service);
-};
-
-const getServiceProxy = (serviceName) => {
+const getServiceProxy = (serviceName, services) => {
     const serviceDetails = services.find((service) => service["name"] === serviceName);
 
     if(serviceDetails) {
@@ -38,55 +22,36 @@ const getServiceProxy = (serviceName) => {
     }
 };
 
-app.post('/service', (req, res) => {
-    addService(req.body);
-    res.sendStatus(201);
-});
+const getServices = async () => {
+    const servicesResponse = await axios.get(`${registerUrl}/services`);
+    return servicesResponse.data;
+};
 
-app.get('/services', (req, res) => {
-    res.status(200);
-    res.json(services.map(service => service["name"]));
-});
-
-function getRequest(options) {
-    return new Promise(function(resolve, reject) {
-        request.get(options, function(err, resp, body) {
-            if (err) {
-                reject(err);
-            } else {
-                resolve(JSON.parse(body));
-            }
-        })
-    })
-}
-
-app.get('/test-call', (req, res) => {
-    const options = {
-        url: 'http://localhost:8080/service-two/people',
-        headers: {
-            'User-Agent': 'request',
-            'content-type': 'application/json'
-        }
-    };
-
-    getRequest(options).then(function(result) {
-        const userDetails = result;
+app.get('/services', async (req, res) => {
+    try {
+        const services = await getServices();
         res.status(200);
-        res.json(userDetails);
-    }, function(err) {
-        console.log(err);
-    });
-
+        res.json(services.map(service => service["name"]));
+    } catch {
+        res.status(400);
+        res.json('Could not retrieve services from register');
+    }
 });
 
-app.all('/:service/:endpoint', (req, res, next) => {
-    const serviceName = req.params.service;
-    const serviceProxy = getServiceProxy(serviceName);
-    if(serviceProxy) {
-        serviceProxy(req, res, next)
-    } else {
+app.all('/:service/:endpoint', async (req, res, next) => {
+    try {
+        const services = await getServices();
+        const serviceName = req.params.service;
+        const serviceProxy = getServiceProxy(serviceName, services);
+        if(serviceProxy) {
+            serviceProxy(req, res, next)
+        } else {
+            res.status(400);
+            res.json("Unknown service: " + serviceName);
+        }
+    } catch {
         res.status(400);
-        res.json("Unknown service: " + serviceName);
+        res.json("Request Failed");
     }
 });
 
