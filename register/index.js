@@ -4,15 +4,20 @@ const morgan = require("morgan");
 const axios = require("axios");
 const mongoose = require("mongoose");
 const Service = require('./model/service');
+require('dotenv').config();
 
 const app = express();
 
-mongoose.connect('mongodb://localhost:27017/admin');
+mongoose.connect(process.env.MONGO_URL);
 
 app.use(morgan('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.set('port', (process.env.PORT || 8090));
+
+app.get('/health', async (req, res) => {
+    res.sendStatus(200);
+});
 
 const getRequest = async url => await axios.get(url);
 
@@ -55,9 +60,9 @@ app.post('/service', (req, res) => {
     service.name = req.body.name;
     service.url = req.body.url;
     service.port = req.body.port;
+    service.loginRequired = req.body.loginRequired;
 
     // TODO - Replace Service with identical name
-    // First delete, then add
     service.save((err) => {
         if (err) {
             res.send(err);
