@@ -12,6 +12,27 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.set('port', (process.env.PORT || 8080));
 
+const getServicesFromRegister = async () => {
+    const servicesResponse = await axios.get(`${registerUrl}/services`);
+    return servicesResponse.data;
+};
+
+app.get('/services', async (req, res) => {
+    try {
+        const services = await getServicesFromRegister();
+        res.status(200);
+        res.json(services.map(service => service["name"]));
+    } catch {
+        res.status(400);
+        res.json('Could not retrieve services from register');
+    }
+});
+
+app.post('/service', (req, res, next) => {
+    const registerProxy = httpProxy(registerUrl);
+    registerProxy(req, res, next);
+});
+
 const getServiceProxy = (serviceName, services) => {
     const serviceDetails = services.find((service) => service["name"] === serviceName);
 
@@ -22,28 +43,15 @@ const getServiceProxy = (serviceName, services) => {
     }
 };
 
-const getServices = async () => {
-    const servicesResponse = await axios.get(`${registerUrl}/services`);
-    return servicesResponse.data;
-};
-
-app.get('/services', async (req, res) => {
-    try {
-        const services = await getServices();
-        res.status(200);
-        res.json(services.map(service => service["name"]));
-    } catch {
-        res.status(400);
-        res.json('Could not retrieve services from register');
-    }
-});
+const doesServiceExist = (serviceName, services) => services.find((service) => service["name"] === serviceName);
 
 app.all('/:service/:endpoint', async (req, res, next) => {
     try {
         const services = await getServices();
         const serviceName = req.params.service;
-        const serviceProxy = getServiceProxy(serviceName, services);
-        if(serviceProxy) {
+
+        if(doesServiceExist(serviceName, services)) {
+            const serviceProxy = getServiceProxy(serviceName, services);
             serviceProxy(req, res, next)
         } else {
             res.status(400);

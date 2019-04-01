@@ -2,36 +2,17 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const morgan = require("morgan");
 const axios = require("axios");
+const mongoose = require("mongoose");
+const Service = require('./model/service');
 
 const app = express();
+
+mongoose.connect('mongodb://localhost:27017/admin');
 
 app.use(morgan('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.set('port', (process.env.PORT || 8090));
-
-const services = [
-    {
-        "name": "service-one",
-        "url": "http://localhost",
-        "port": "8081",
-    },
-    {
-        "name": "service-two",
-        "url": "http://localhost",
-        "port": "8082"
-    },
-    {
-        "name": "service-4",
-        "url": "http://localhost",
-        "port": "8082"
-    },
-    {
-        "name": "service-three",
-        "url": "http://localhost",
-        "port": "8083"
-    }
-];
 
 const getRequest = async url => await axios.get(url);
 
@@ -56,19 +37,34 @@ const determineAvailableServices = async (services) => {
 };
 
 app.get('/services', async (req, res) => {
-    const availableServices = await determineAvailableServices(services);
+    Service.find(async (err, services) => {
+        if (err) {
+            res.send(err);
+        } else {
+            const availableServices = await determineAvailableServices(services);
 
-    res.status(200);
-    res.json(availableServices);
+            res.status(200);
+            res.json(availableServices);
+        }
+    });
 });
 
-const addService = (service) => {
-    services.push(service);
-};
-
 app.post('/service', (req, res) => {
-    addService(req.body);
-    res.sendStatus(201);
+    const service = new Service();
+
+    service.name = req.body.name;
+    service.url = req.body.url;
+    service.port = req.body.port;
+
+    // TODO - Replace Service with identical name
+    // First delete, then add
+    service.save((err) => {
+        if (err) {
+            res.send(err);
+        } else {
+            res.sendStatus(201);
+        }
+    });
 });
 
 app.listen(app.get('port'), () => {
