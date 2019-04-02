@@ -18,9 +18,21 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.set('port', (process.env.PORT || 8070));
 
+
+
+/***************************************************************************************
+ *      Health Endpoint
+ ***************************************************************************************/
+
 app.get('/health', async (req, res) => {
     res.sendStatus(200);
 });
+
+
+
+/***************************************************************************************
+ *      User Service Requests
+ ***************************************************************************************/
 
 app.post('/login', (req, res, next) => {
     const registerProxy = httpProxy(userServiceUrl);
@@ -30,25 +42,6 @@ app.post('/login', (req, res, next) => {
 app.post('/logout', (req, res, next) => {
     const registerProxy = httpProxy(userServiceUrl);
     registerProxy(req, res, next);
-});
-
-app.post('/service', (req, res, next) => {
-    const registerProxy = httpProxy(registerUrl);
-    registerProxy(req, res, next);
-});
-
-app.get('/services', async (req, res) => {
-    try {
-        const services = await helpers.getServicesFromRegister();
-        res.status(200);
-        res.json(services.map(service => ({
-            name: service.name,
-            loginRequired: service.loginRequired || false,
-        })));
-    } catch {
-        res.status(400);
-        res.json('Could not retrieve services from register');
-    }
 });
 
 app.get('/verifySession', async (req, res) => {
@@ -64,9 +57,66 @@ app.get('/verifySession', async (req, res) => {
     res.sendStatus(response ? response.status : 400);
 });
 
+
+
+/***************************************************************************************
+ *      Service Register Requests
+ ***************************************************************************************/
+
+app.get('/register/health', (req, res, next) => {
+    const registerProxy = httpProxy(registerUrl);
+    registerProxy(req, res, next);
+});
+
+app.post('/service', (req, res, next) => {
+    const registerProxy = httpProxy(registerUrl);
+    registerProxy(req, res, next);
+});
+
+app.post('/services', (req, res, next) => {
+    const registerProxy = httpProxy(registerUrl);
+    registerProxy(req, res, next);
+});
+
+app.delete('/services/:serviceName', (req, res, next) => {
+    const registerProxy = httpProxy(registerUrl);
+    registerProxy(req, res, next);
+});
+
+app.get('/services', async (req, res) => {
+    try {
+        const services = await helpers.getHealthyServicesFromRegister();
+        res.status(200);
+        res.json(services.map(service => ({
+            name: service.name,
+            loginRequired: service.loginRequired || false,
+        })));
+    } catch {
+        res.status(400);
+        res.json('Could not retrieve services from register');
+    }
+});
+
+app.get('/services/admin-details', async (req, res) => {
+    try {
+        const services = await helpers.getAllServicesFromRegister();
+        res.status(200);
+        res.json(services);
+    } catch {
+        res.status(400);
+        res.json('Could not retrieve services from register');
+    }
+});
+
+
+
+/***************************************************************************************
+ *      Microservices Requests
+ ***************************************************************************************/
+
 app.all('/:serviceName/:endpoint', async (req, res, next) => {
     try {
-        const services = await helpers.getServicesFromRegister();
+        const services = await helpers.getHealthyServicesFromRegister();
         const service = helpers.getService(req.params.serviceName, services);
 
         if(service) {
@@ -89,6 +139,8 @@ app.all('/:serviceName/:endpoint', async (req, res, next) => {
         res.json("Request Failed");
     }
 });
+
+
 
 app.listen(app.get('port'), () => {
     console.log(`Find the server at: http://localhost:${app.get('port')}/`);

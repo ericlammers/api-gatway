@@ -15,7 +15,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.set('port', (process.env.PORT || 8090));
 
-app.get('/health', async (req, res) => {
+app.get('/register/health', async (req, res) => {
     res.sendStatus(200);
 });
 
@@ -41,7 +41,7 @@ const determineAvailableServices = async (services) => {
     return availableServices;
 };
 
-app.get('/services', async (req, res) => {
+app.get('/healthy-services', async (req, res) => {
     Service.find(async (err, services) => {
         if (err) {
             res.send(err);
@@ -54,6 +54,28 @@ app.get('/services', async (req, res) => {
     });
 });
 
+app.get('/all-services', async (req, res) => {
+    Service.find(async (err, services) => {
+        if (err) {
+            res.send(err);
+        } else {
+            res.status(200);
+            res.json(services);
+        }
+    });
+});
+
+app.delete('/services/:serviceName', (req, res) => {
+    Service.remove({
+        name: req.params.serviceName
+    }, (err, service) => {
+        if (err) {
+            res.send(err);
+        }
+        res.json({ message: 'Successfully deleted' });
+    });
+});
+
 app.post('/service', (req, res) => {
     const service = new Service();
 
@@ -62,7 +84,6 @@ app.post('/service', (req, res) => {
     service.port = req.body.port;
     service.loginRequired = req.body.loginRequired;
 
-    // TODO - Replace Service with identical name
     service.save((err) => {
         if (err) {
             res.send(err);
@@ -70,6 +91,29 @@ app.post('/service', (req, res) => {
             res.sendStatus(201);
         }
     });
+});
+
+app.post('/services', (req, res) => {
+    const newServices = req.body;
+
+    newServices.forEach(newService => {
+        const service = new Service();
+
+        service.name = newService.name;
+        service.url = newService.url;
+        service.port = newService.port;
+        service.loginRequired = newService.loginRequired;
+
+        service.save((err) => {
+            if (err) {
+                console.log(err);
+            } else {
+                console.log("Inserted");
+            }
+        });
+    });
+
+    res.sendStatus(201);
 });
 
 app.listen(app.get('port'), () => {

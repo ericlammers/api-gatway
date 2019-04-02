@@ -4,8 +4,13 @@ const httpProxy = require('express-http-proxy');
 const registerUrl = process.env.REGISTER_URL || 'http://localhost:8090';
 const userServiceUrl = process.env.USER_SERVICE_URL || 'http://localhost:8080';
 
-const getServicesFromRegister = async () => {
-    const servicesResponse = await axios.get(`${registerUrl}/services`);
+const getHealthyServicesFromRegister = async () => {
+    const servicesResponse = await axios.get(`${registerUrl}/healthy-services`);
+    return servicesResponse.data;
+};
+
+const getAllServicesFromRegister = async () => {
+    const servicesResponse = await axios.get(`${registerUrl}/all-services`);
     return servicesResponse.data;
 };
 
@@ -33,4 +38,5 @@ const isServiceAuthenticated = async (req) => {
 exports.isServiceAuthenticated = isServiceAuthenticated;
 exports.getService = getService;
 exports.getServiceProxy = getServiceProxy;
-exports.getServicesFromRegister = getServicesFromRegister;
+exports.getHealthyServicesFromRegister = getHealthyServicesFromRegister;
+exports.getAllServicesFromRegister = getAllServicesFromRegister;
