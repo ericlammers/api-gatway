@@ -6,6 +6,7 @@ const axios = require("axios");
 const morgan = require("morgan");
 require('dotenv').config();
 const helpers = require("./helpers");
+const cors = require('cors');
 
 const registerUrl = process.env.REGISTER_URL || 'http://localhost:8090';
 const userServiceUrl = process.env.USER_SERVICE_URL || 'http://localhost:8080';
@@ -16,6 +17,7 @@ app.use(morgan('dev'));
 app.use(cookieParser());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(cors());
 app.set('port', (process.env.PORT || 8080));
 
 
