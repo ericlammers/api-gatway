@@ -13,7 +13,7 @@ mongoose.connect(process.env.MONGO_URL);
 app.use(morgan('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.set('port', (process.env.PORT || 8090));
+app.set('port', (process.env.PORT || 8080));
 
 app.get('/register/health', async (req, res) => {
     res.sendStatus(200);
