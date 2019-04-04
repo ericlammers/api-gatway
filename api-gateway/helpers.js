@@ -15,7 +15,7 @@ const getAllServicesFromRegister = async () => {
     return servicesResponse.data;
 };
 
-const getServiceProxy = service => httpProxy(`${service.url}:${service.port}`);
+const getServiceProxy = service => httpProxy(`${service.url}:${service.port}`, (err) => console.log(err));
 
 const getService = (serviceName, services) => services.find((service) => service["name"] === serviceName);
 

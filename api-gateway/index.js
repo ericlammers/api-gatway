@@ -20,8 +20,6 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors());
 app.set('port', (process.env.PORT || 8080));
 
-
-
 /***************************************************************************************
  *      Health Endpoint
  ***************************************************************************************/
@@ -111,12 +109,69 @@ app.get('/services/admin-details', async (req, res) => {
 });
 
 
-
 /***************************************************************************************
  *      Microservices Requests
  ***************************************************************************************/
 
-app.all('/:serviceName/:endpoint', async (req, res, next) => {
+app.post('/:serviceName/*', async (req, res) => {
+    const services = await helpers.getHealthyServicesFromRegister();
+    const service = helpers.getService(req.params.serviceName, services);
+
+    if(service) {
+        if(service.loginRequired) {
+            if(!(await helpers.isServiceAuthenticated(req))) {
+                console.log("Not Authenticated");
+                res.status(400);
+                res.json("Service is not authenticated");
+            }
+        }
+
+        const response = await axios({
+                method: 'post',
+                url: `${service.url}:${service.port}${req.originalUrl}`,
+                data: req.body
+            }
+        ).catch((err) => console.log(err));
+
+        res.status(response ? response.status : 400);
+        res.json(response ? response.data : '');
+    } else {
+        res.status(400);
+        res.json("Unknown service: " + serviceName);
+    }
+});
+
+
+app.get('/:serviceName/*', async (req, res) => {
+    const services = await helpers.getHealthyServicesFromRegister();
+    const service = helpers.getService(req.params.serviceName, services);
+
+    if(service) {
+        if(service.loginRequired) {
+            if(!(await helpers.isServiceAuthenticated(req))) {
+                console.log("Not Authenticated");
+                res.status(400);
+                res.json("Service is not authenticated");
+            }
+        }
+
+        console.log(`${service.url}:${service.port}${req.originalUrl}`);
+
+        const response = await axios({
+                method: 'get',
+                url: `${service.url}:${service.port}${req.originalUrl}`,
+            }
+        ).catch((err) => console.log("Error"));
+
+        res.status(response ? response.status : 400);
+        res.json(response ? response.data : '');
+    } else {
+        res.status(400);
+        res.json("Unknown service: " + serviceName);
+    }
+});
+
+app.all('/:serviceName/*', async (req, res, next) => {
     try {
         const services = await helpers.getHealthyServicesFromRegister();
         const service = helpers.getService(req.params.serviceName, services);
@@ -141,8 +196,6 @@ app.all('/:serviceName/:endpoint', async (req, res, next) => {
         res.json("Request Failed");
     }
 });
-
-
 
 app.listen(app.get('port'), () => {
     console.log(`Find the server at: http://localhost:${app.get('port')}/`);
