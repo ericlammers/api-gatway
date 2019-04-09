@@ -10,7 +10,7 @@ app.use(morgan('dev'));
 
 const serviceName = process.env.NAME || "unnamed";
 
-app.set('port', (process.env.PORT || 8081));
+app.set('port', (process.env.PORT || 8080));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors());
@@ -33,18 +33,17 @@ app.get(addBaseEndpoint('/health'), (req, res) => {
 });
 
 const people = [
-    "John",
-    "Tom",
-    "George"
+    "apple",
+    "amazon"
 ];
 
-app.get(addBaseEndpoint('/people'), (req, res) => {
+app.get(addBaseEndpoint('/stocks'), (req, res) => {
     res.setHeader('Cache-Control', 'no-cache');
     res.status(200);
     res.json(people);
 });
 
-app.post(addBaseEndpoint('/person'), (req, res) => {
+app.post(addBaseEndpoint('/stock'), (req, res) => {
     const person = req.body.name;
 
     people.push(person);
